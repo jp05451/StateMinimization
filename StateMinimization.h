@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <map>
 #pragma once
 
 using namespace std;
@@ -24,6 +25,10 @@ class outputState
 public:
     string state = "";
     bool output = 0;
+    bool operator==(const outputState &b)
+    {
+        return state == b.state && output == b.output;
+    }
 };
 
 ostream &operator<<(ostream &ostr, const outputState &b)
@@ -38,9 +43,13 @@ class state
 public:
     string name;
     outputState nextState[2];
-    bool operator==(const state &b)
+    bool compare(const state &b)
     {
         return b.name == name;
+    }
+    bool operator==(const state &b)
+    {
+        return nextState[0] == b.nextState[0] && nextState[1] == b.nextState[1];
     }
 };
 ostream &operator<<(ostream &ost, const state &b)
@@ -62,7 +71,7 @@ public:
 private:
     fstream inputFile;
     vector<state> stateList;
-    //map<string, state> stateMap;
+    map<string, map<string,state>> stateTable;
     script inputScript;
     script outputScript;
 };
@@ -132,7 +141,7 @@ vector<state>::iterator find(vector<state>::iterator begin, vector<state>::itera
     vector<state>::iterator i = begin;
     for (i = begin; i != end; i = next(i, 1))
     {
-        if (*i == data)
+        if (i->compare(data))
         {
             return i;
         }
