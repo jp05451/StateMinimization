@@ -55,6 +55,7 @@ class StateMinimization
 public:
     StateMinimization(const string &fileName);
     void listBuild();
+    void tableBuild();
     void scriptDecode();
     void scriptEncode();
 
@@ -135,7 +136,6 @@ vector<state>::iterator find(vector<state>::iterator begin, vector<state>::itera
         {
             return i;
         }
-        
     }
     return i;
 }
@@ -167,4 +167,8 @@ void StateMinimization::listBuild()
             stateList.push_back(tempState);
         }
     }
+}
+
+void StateMinimization::tableBuild()
+{
 }
