@@ -19,6 +19,13 @@ public:
     string beginState;
 };
 
+class stateRelate
+{
+public:
+    string leftState;
+    string rightState;
+};
+
 //nextstate data
 class outputState
 {
@@ -67,11 +74,13 @@ public:
     void tableBuild();
     void scriptDecode();
     void scriptEncode();
+    void begin();
+    void printTable();
 
 private:
     fstream inputFile;
     vector<state> stateList;
-    map<string, map<string,state>> stateTable;
+    map<string, map<string, stateRelate[2]>> stateTable;
     script inputScript;
     script outputScript;
 };
@@ -90,6 +99,7 @@ StateMinimization::StateMinimization(const string &fileName)
     scriptDecode();
     listBuild();
     inputFile.close();
+
     cout << "\t0\t1" << endl;
     for (auto c : stateList)
     {
@@ -180,4 +190,42 @@ void StateMinimization::listBuild()
 
 void StateMinimization::tableBuild()
 {
+    for (int L = 0; L < stateList.size(); L++)
+    {
+        for (int R = 1; R <= L + 1; R++)
+        {
+            for (int b = 0; b < 2; b++)
+            {
+                string Left = stateList[L].name;
+                string Right = stateList[R].name;
+                stateTable[Left][Right][b].leftState = stateList[L].nextState[b].state;
+                stateTable[Left][Right][b].rightState = stateList[R].nextState[b].state;
+            }
+        }
+    }
 }
+
+void StateMinimization::begin()
+{
+    tableBuild();
+    printTable();
+}
+
+void StateMinimization::printTable()
+{
+    for (int L = 0; L < stateList.size(); L++)
+    {
+        for (int R = 1; R <= L + 1; R++)
+        {
+            for (int b = 0; b < 2; b++)
+            {
+                string Left = stateList[L].name;
+                string Right = stateList[R].name;
+                cout << stateTable[Left][Right][b].leftState << "-";
+                cout << stateTable[Left][Right][b].rightState << "\t";
+            }
+            cout << endl;
+        }
+    }
+}
+
