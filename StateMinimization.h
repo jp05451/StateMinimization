@@ -22,6 +22,7 @@ public:
 class stateRelate
 {
 public:
+    bool noRelate = true;
     string leftState;
     string rightState;
 };
@@ -76,6 +77,9 @@ public:
     void scriptEncode();
     void begin();
     void printTable();
+    bool fileOpen();
+    void printList();
+    void tableMinimize();
 
 private:
     fstream inputFile;
@@ -83,28 +87,21 @@ private:
     map<string, map<string, stateRelate[2]>> stateTable;
     script inputScript;
     script outputScript;
+    string inputName;
 };
 
 //********************************************************************
 
 StateMinimization::StateMinimization(const string &fileName)
 {
-    inputFile.open(fileName, ios::in);
-    if (!inputFile.is_open())
-    {
-        cout << fileName << " open failed" << endl;
-        inputFile.close();
-        return;
-    }
-    scriptDecode();
-    listBuild();
-    inputFile.close();
+    this->inputName = fileName;
+}
 
-    cout << "\t0\t1" << endl;
-    for (auto c : stateList)
-    {
-        cout << c << endl;
-    }
+bool StateMinimization::fileOpen()
+{
+    inputFile.open(inputName, ios::in);
+
+    return inputFile.is_open();
 }
 
 void StateMinimization::scriptDecode()
@@ -190,7 +187,7 @@ void StateMinimization::listBuild()
 
 void StateMinimization::tableBuild()
 {
-    for (int L = 0; L < stateList.size(); L++)
+    for (int L = 0; L < stateList.size() - 1; L++)
     {
         for (int R = 1; R <= L + 1; R++)
         {
@@ -205,27 +202,72 @@ void StateMinimization::tableBuild()
     }
 }
 
+void StateMinimization::printList()
+{
+    cout << "\t0\t1" << endl;
+    for (int i = 0; i < stateList.size(); i++)
+    {
+        cout << stateList[i] << endl;
+    }
+}
+
 void StateMinimization::begin()
 {
+
+    if (!fileOpen())
+    {
+        cout << inputName << " open failed" << endl;
+        inputFile.close();
+        return;
+    }
+    scriptDecode();
+    listBuild();
+    inputFile.close();
+
+    printList();
+    cout << "\n";
     tableBuild();
     printTable();
+
 }
 
 void StateMinimization::printTable()
 {
-    for (int L = 0; L < stateList.size(); L++)
+    for (int L = 0; L < stateList.size() - 1; L++)
     {
-        for (int R = 1; R <= L + 1; R++)
+        string Left = stateList[L].name;
+        for (int b = 0; b < 2; b++)
         {
-            for (int b = 0; b < 2; b++)
+            if (b == 0)
+                cout << Left << "\t";
+            else
+                cout << "\t";
+            for (int R = 1; R <= L + 1; R++)
             {
-                string Left = stateList[L].name;
+
                 string Right = stateList[R].name;
                 cout << stateTable[Left][Right][b].leftState << "-";
                 cout << stateTable[Left][Right][b].rightState << "\t";
+                cout << "|";
             }
             cout << endl;
         }
     }
+    cout << "\t";
+    for (int R = 1; R < stateList.size(); R++)
+    {
+        cout << stateList[R].name << "\t";
+    }
+    puts("");
 }
 
+void StateMinimization::tableMinimize()
+{
+    for (int i = 0; i < 2;i++)
+    {
+        for (int j = 0; j < 2;j++)
+        {
+            
+        }
+    }
+}
