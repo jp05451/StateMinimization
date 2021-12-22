@@ -187,9 +187,9 @@ void StateMinimization::listBuild()
 
 void StateMinimization::tableBuild()
 {
-    for (int L = 0; L < stateList.size() - 1; L++)
+    for (int L = 0; L < stateList.size(); L++)
     {
-        for (int R = 1; R <= L + 1; R++)
+        for (int R = 0; R < stateList.size(); R++)
         {
             for (int b = 0; b < 2; b++)
             {
@@ -232,7 +232,7 @@ void StateMinimization::begin()
 
 void StateMinimization::printTable()
 {
-    for (int L = 0; L < stateList.size() - 1; L++)
+    for (int L = 0; L < stateList.size(); L++)
     {
         string Left = stateList[L].name;
         for (int b = 0; b < 2; b++)
@@ -241,19 +241,19 @@ void StateMinimization::printTable()
                 cout << Left << "\t";
             else
                 cout << "\t";
-            for (int R = 1; R <= L + 1; R++)
+            for (int R = 0; R < stateList.size(); R++)
             {
-
+                cout << "|";
                 string Right = stateList[R].name;
                 cout << stateTable[Left][Right][b].leftState << "-";
                 cout << stateTable[Left][Right][b].rightState << "\t";
-                cout << "|";
             }
             cout << endl;
         }
+        cout << endl;
     }
     cout << "\t";
-    for (int R = 1; R < stateList.size(); R++)
+    for (int R = 0; R < stateList.size(); R++)
     {
         cout << stateList[R].name << "\t";
     }
@@ -274,7 +274,7 @@ void StateMinimization::tableMinimize()
                     disableState.push_back(stateList[i].name);
                 }
             }
-            for (int i = 0;i<)
+            
         }
     }
 }
