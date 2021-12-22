@@ -27,16 +27,24 @@ public:
 
 class stateBlock
 {
+public:
     map<string, stateBlock *> nextState;
-    bool is_unusable = true;
+    map<string, string[2]> nextStateName;
+    bool usable = true;
 };
 
 class StateMinimization
 {
 public:
     StateMinimization(string fileName);
-
+    void begin();
     void tableBuild();
+    void outputConditionBuild();
+    void tableMinimization();
+    void findInitialFalse(const string &out);
+    void listMinimization();
+    void printTable();
+    void printList();
 
 private:
     script inputScript;
@@ -88,7 +96,6 @@ StateMinimization::StateMinimization(string fileName)
 
             stateName.insert(inputState);
             inputCondition.insert(command);
-            outputCondition.insert(outputValue);
             stateList[inputState][command].nextState = outputState;
             stateList[inputState][command].output = outputValue;
         }
@@ -97,6 +104,156 @@ StateMinimization::StateMinimization(string fileName)
     inputFile.close();
 }
 
+void StateMinimization::begin()
+{
+    outputConditionBuild();
+
+    for (auto &out : outputCondition)
+    {
+        cout << out << endl;
+        tableBuild();
+        findInitialFalse(out);
+        tableMinimization();
+        stateTable.clear();
+    }
+}
+
+void StateMinimization::outputConditionBuild()
+{
+    for (auto &s : stateList)
+    {
+        string output;
+        for (auto &out : s.second)
+        {
+            output += out.second.output;
+        }
+        outputCondition.insert(output);
+    }
+}
+
 void StateMinimization::tableBuild()
 {
+    for (auto &s1 : stateList)
+    {
+        for (auto &s2 : stateList)
+        {
+            for (auto &input : inputCondition)
+            {
+                string nextS1 = s1.second[input].nextState;
+                string nextS2 = s2.second[input].nextState;
+                stateTable[s1.first][s2.first].nextState[input] = &stateTable[nextS1][nextS2];
+                stateTable[s1.first][s2.first].nextStateName[input][0] = nextS1;
+                stateTable[s1.first][s2.first].nextStateName[input][1] = nextS2;
+            }
+        }
+    }
+}
+
+void StateMinimization::tableMinimization()
+{
+    bool hasChange = true;
+    while (hasChange == true)
+    {
+        hasChange = false;
+        for (auto &s1 : stateTable)
+        {
+            for (auto &s2 : s1.second)
+            {
+                for (auto input : inputCondition)
+                {
+                    if (s2.second.nextState[input]->usable == false && s2.second.usable == true)
+                    {
+                        s2.second.usable = false;
+                        hasChange = true;
+                    }
+                }
+            }
+        }
+    }
+    for (auto &s1 : stateTable)
+    {
+        for (auto &s2 : s1.second)
+        {
+            if (s2.second.usable == true)
+            {
+                stateList.erase(s2.first);
+                for (auto &l1 : stateList)
+                {
+                    for(auto &ha:inputCondition)
+                    {
+                        if(l1.second[ha].nextState==s2.first)
+                        {
+                            l1.second[ha].nextState = s1.first;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void StateMinimization::findInitialFalse(const string &out)
+{
+    printTable();
+    vector<string> cross;
+    for (auto &s : stateList)
+    {
+        string tempOutput;
+        for (auto &o : s.second)
+        {
+            tempOutput += o.second.output;
+        }
+        if (tempOutput != out)
+        {
+            cross.push_back(s.first);
+        }
+    }
+    for (auto &c : cross)
+    {
+        for (auto &s : stateName)
+        {
+            stateTable[c][s].usable = false;
+            stateTable[s][c].usable = false;
+        }
+        stateTable[c][c].usable = true;
+    }
+    printTable();
+}
+
+void StateMinimization::printTable()
+{
+    for (auto &s : stateName)
+    {
+        cout << "\t" << s;
+    }
+    cout << endl;
+    for (auto &s1 : stateTable)
+    {
+        cout << s1.first << "\t";
+        for (auto &s2 : s1.second)
+        {
+            cout << s2.second.usable << "\t";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+void StateMinimization::printList()
+{
+    for (auto &input : inputCondition)
+    {
+        cout << "\t" << input;
+    }
+    cout << endl;
+    for (auto &s1 : stateList)
+    {
+        cout << s1.first << "\t";
+        for (auto &s2 : s1.second)
+        {
+            cout << s2.second.nextState;
+            cout << s2.second.output << "\t";
+        }
+        cout << endl;
+    }
 }
