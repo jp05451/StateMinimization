@@ -228,7 +228,6 @@ void StateMinimization::begin()
     cout << "\n";
     tableBuild();
     printTable();
-
 }
 
 void StateMinimization::printTable()
@@ -263,11 +262,19 @@ void StateMinimization::printTable()
 
 void StateMinimization::tableMinimize()
 {
-    for (int i = 0; i < 2;i++)
+    for (int MSB = 0; MSB < 2; MSB++)
     {
-        for (int j = 0; j < 2;j++)
+        for (int LSB = 0; LSB < 2; LSB++)
         {
-            
+            vector<string> disableState;
+            for (int i = 0; i < inputScript.stateNumber; i++)
+            {
+                if (stateList[i].nextState[0].output != MSB || stateList[i].nextState[1].output != LSB)
+                {
+                    disableState.push_back(stateList[i].name);
+                }
+            }
+            for (int i = 0;i<)
         }
     }
 }
