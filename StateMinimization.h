@@ -45,6 +45,7 @@ public:
     void listMinimization();
     void printTable();
     void printList();
+    void usableCross();
 
 private:
     script inputScript;
@@ -142,6 +143,7 @@ void StateMinimization::tableBuild()
                 string nextS1 = s1.second[input].nextState;
                 string nextS2 = s2.second[input].nextState;
                 stateTable[s1.first][s2.first].nextState[input] = &stateTable[nextS1][nextS2];
+                stateTable[s2.first][s1.first].nextState[input] = &stateTable[nextS2][nextS1];
                 stateTable[s1.first][s2.first].nextStateName[input][0] = nextS1;
                 stateTable[s1.first][s2.first].nextStateName[input][1] = nextS2;
             }
@@ -170,26 +172,40 @@ void StateMinimization::tableMinimization()
             }
         }
     }
+    printTable();
     for (auto &s1 : stateTable)
     {
         for (auto &s2 : s1.second)
         {
-            if (s2.second.usable == true)
+            if (s2.second.usable == true && s1.first != s2.first)
             {
+                //erase s2 from stateList and stateName
                 stateList.erase(s2.first);
+                stateName.erase(s2.first);
                 for (auto &l1 : stateList)
                 {
-                    for(auto &ha:inputCondition)
+                    for (auto &ha : inputCondition)
                     {
-                        if(l1.second[ha].nextState==s2.first)
+                        if (l1.second[ha].nextState == s2.first)
                         {
                             l1.second[ha].nextState = s1.first;
                         }
                     }
                 }
+
+                //mark stateTable
+                for (auto &n : stateName)
+                {
+                    if (n != s2.first)
+                    {
+                        stateTable[n][s2.first].usable = false;
+                        stateTable[s2.first][n].usable = false;
+                    }
+                }
             }
         }
     }
+    printList();
 }
 
 void StateMinimization::findInitialFalse(const string &out)
@@ -251,9 +267,17 @@ void StateMinimization::printList()
         cout << s1.first << "\t";
         for (auto &s2 : s1.second)
         {
-            cout << s2.second.nextState;
+            cout << s2.second.nextState << " ";
             cout << s2.second.output << "\t";
         }
         cout << endl;
+    }
+}
+
+void StateMinimization::usableCross()
+{
+    for (auto &c : stateTable)
+    {
+        stateTable[c.first][c.first].usable = true;
     }
 }
