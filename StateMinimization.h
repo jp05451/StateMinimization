@@ -43,17 +43,19 @@ public:
     void tableMinimization();
     void findInitialFalse(const string &out);
     void listMinimization();
-    void printTable();
+    void printTable(string describe);
     void printList();
     void usableCross();
 
-private:
+    void kissToDot(const map<string, map<string, stateOutput>> &);
+
     script inputScript;
     set<string> stateName;
     map<string, map<string, stateOutput>> stateList;
     map<string, map<string, stateBlock>> stateTable;
     set<string> outputCondition;
     set<string> inputCondition;
+    string fileName;
 };
 
 StateMinimization::StateMinimization(string fileName)
@@ -108,15 +110,19 @@ StateMinimization::StateMinimization(string fileName)
 void StateMinimization::begin()
 {
     outputConditionBuild();
-
+    printList();
     for (auto &out : outputCondition)
     {
         cout << out << endl;
         tableBuild();
         findInitialFalse(out);
+        printTable("after initial false");
+
         tableMinimization();
+        printList();
         stateTable.clear();
     }
+    kissToDot(stateList);
 }
 
 void StateMinimization::outputConditionBuild()
@@ -146,6 +152,8 @@ void StateMinimization::tableBuild()
                 stateTable[s2.first][s1.first].nextState[input] = &stateTable[nextS2][nextS1];
                 stateTable[s1.first][s2.first].nextStateName[input][0] = nextS1;
                 stateTable[s1.first][s2.first].nextStateName[input][1] = nextS2;
+                stateTable[s2.first][s1.first].nextStateName[input][0] = nextS2;
+                stateTable[s2.first][s1.first].nextStateName[input][1] = nextS1;
             }
         }
     }
@@ -153,6 +161,8 @@ void StateMinimization::tableBuild()
 
 void StateMinimization::tableMinimization()
 {
+
+    //get minimize
     bool hasChange = true;
     while (hasChange == true)
     {
@@ -165,6 +175,8 @@ void StateMinimization::tableMinimization()
                 {
                     if (s2.second.nextState[input]->usable == false && s2.second.usable == true)
                     {
+                        cout << s2.first << "-" << s1.first << endl;
+
                         s2.second.usable = false;
                         hasChange = true;
                     }
@@ -172,45 +184,48 @@ void StateMinimization::tableMinimization()
             }
         }
     }
-    printTable();
+    printTable("before erase");
+
+    cout << endl;
     for (auto &s1 : stateTable)
     {
         for (auto &s2 : s1.second)
         {
-            if (s2.second.usable == true && s1.first != s2.first)
+            if (s2.second.usable == true)
             {
-                //erase s2 from stateList and stateName
-                stateList.erase(s2.first);
-                stateName.erase(s2.first);
-                for (auto &l1 : stateList)
+                if (s1.first != s2.first)
                 {
-                    for (auto &ha : inputCondition)
+                    stateList.erase(s2.first);
+                    stateName.erase(s2.first);
+
+                    for (auto &L1 : stateList)
                     {
-                        if (l1.second[ha].nextState == s2.first)
+                        for (auto &L2 : L1.second)
                         {
-                            l1.second[ha].nextState = s1.first;
+                            if (L2.second.nextState == s2.first)
+                            {
+                                L2.second.nextState = s1.first;
+                            }
                         }
                     }
-                }
 
-                //mark stateTable
-                for (auto &n : stateName)
-                {
-                    if (n != s2.first)
+                    //get table cross
+                    for (auto &t1 : stateTable)
                     {
-                        stateTable[n][s2.first].usable = false;
-                        stateTable[s2.first][n].usable = false;
+                        if (t1.first != s2.first)
+                        {
+                            stateTable[t1.first][s2.first].usable = false;
+                            stateTable[s2.first][t1.first].usable = false;
+                        }
                     }
                 }
             }
         }
     }
-    printList();
 }
 
 void StateMinimization::findInitialFalse(const string &out)
 {
-    printTable();
     vector<string> cross;
     for (auto &s : stateList)
     {
@@ -233,11 +248,11 @@ void StateMinimization::findInitialFalse(const string &out)
         }
         stateTable[c][c].usable = true;
     }
-    printTable();
 }
 
-void StateMinimization::printTable()
+void StateMinimization::printTable(string describe)
 {
+    cout << describe << endl;
     for (auto &s : stateName)
     {
         cout << "\t" << s;
@@ -246,13 +261,35 @@ void StateMinimization::printTable()
     for (auto &s1 : stateTable)
     {
         cout << s1.first << "\t";
-        for (auto &s2 : s1.second)
+        for (auto &input : inputCondition)
         {
-            cout << s2.second.usable << "\t";
+            if (input != *(inputCondition.begin()))
+            {
+                cout << "\t";
+            }
+            for (auto &s2 : s1.second)
+            {
+                if (s2.second.usable == true)
+                {
+                    cout << s2.second.nextStateName[input][0] << "-";
+                    cout << s2.second.nextStateName[input][1] << "\t";
+                }
+                else
+                {
+                    if (input == *(inputCondition.begin()))
+                    {
+                        cout << "X\t";
+                    }
+                    else
+                    {
+                        cout << "\t";
+                    }
+                }
+            }
+            cout << endl;
         }
         cout << endl;
     }
-    cout << endl;
 }
 
 void StateMinimization::printList()
@@ -280,4 +317,30 @@ void StateMinimization::usableCross()
     {
         stateTable[c.first][c.first].usable = true;
     }
+}
+
+void StateMinimization::kissToDot(const map<string, map<string, stateOutput>> &inputList)
+{
+    fstream outputFile;
+    outputFile.open("output.dot", ios::out | ios::trunc);
+
+    outputFile << "digraph STG {" << endl;
+    outputFile << "rankdir=LR;" << endl;
+
+    outputFile << "   INIT [shape=point];" << endl;
+    for (auto &name : stateName)
+    {
+        outputFile << name << " [label=\"" << name << "\"];" << endl;
+    }
+    outputFile << "INIT -> " << inputScript.beginState << ";" << endl;
+    for (auto &list : inputList)
+    {
+        for (auto input : list.second)
+        {
+            outputFile << list.first << " -> " << list.second[input.first].nextState << "[label=\"" << input.first << "/" << list.second[input.first].output << "\"];" << endl;
+        }
+    }
+    outputFile << "}";
+
+    outputFile.close();
 }
