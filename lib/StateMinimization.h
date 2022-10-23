@@ -15,6 +15,7 @@ public:
     int inputNumber;
     int outputNumber;
     int stateNumber;
+    int lines;
     string beginState;
 };
 
@@ -36,7 +37,8 @@ public:
 class StateMinimization
 {
 public:
-    StateMinimization(string fileName);
+    StateMinimization(string inputKiss, string outputKiss, string outputDot);                                 // minimize kiss and output dot
+    StateMinimization(string _inputKiss, string _outputDot) : inputKiss(_inputKiss), outputDot(_outputDot){}; // kiss to dot
     void begin();
     void tableBuild();
     void outputConditionBuild();
@@ -46,8 +48,11 @@ public:
     void printTable(string describe);
     void printList();
     void usableCross();
+    void KissToDot(string);
+    void readKissScript(string);
 
-    void kissToDot(const map<string, map<string, stateOutput>> &);
+    void stateToDot();
+    void stateToKiss();
 
     script inputScript;
     set<string> stateName;
@@ -55,13 +60,29 @@ public:
     map<string, map<string, stateBlock>> stateTable;
     set<string> outputCondition;
     set<string> inputCondition;
-    string fileName;
+    string inputKiss;
+    string outputKiss;
+    string outputDot;
+
+    int lines;
 };
 
-StateMinimization::StateMinimization(string fileName)
+void StateMinimization::KissToDot(string kissFile)
+{
+    readKissScript(kissFile);
+    stateToDot();
+}
+
+void StateMinimization::readKissScript(string kissFile)
 {
     fstream inputFile;
-    inputFile.open(fileName, ios::in);
+
+    inputFile.open(kissFile, ios::in);
+    if (!inputFile.is_open())
+    {
+        cout << kissFile << " read Error" << endl;
+        exit(0);
+    }
 
     string command;
     inputFile >> command;
@@ -85,6 +106,9 @@ StateMinimization::StateMinimization(string fileName)
             case 'r':
                 inputFile >> inputScript.beginState;
                 break;
+            case 'p':
+                inputFile >> inputScript.lines;
+                break;
             default:
                 inputFile >> command;
                 break;
@@ -107,6 +131,16 @@ StateMinimization::StateMinimization(string fileName)
     inputFile.close();
 }
 
+StateMinimization::StateMinimization(string _inputKiss, string _outputKiss, string _outputDot)
+{
+    fstream inputFile;
+    inputKiss = _inputKiss;
+    outputKiss = _outputKiss;
+    outputDot = _outputDot;
+
+    readKissScript(inputKiss);
+}
+
 void StateMinimization::begin()
 {
     outputConditionBuild();
@@ -122,7 +156,8 @@ void StateMinimization::begin()
         printList();
         stateTable.clear();
     }
-    kissToDot(stateList);
+    stateToDot();
+    stateToKiss();
 }
 
 void StateMinimization::outputConditionBuild()
@@ -162,7 +197,7 @@ void StateMinimization::tableBuild()
 void StateMinimization::tableMinimization()
 {
 
-    //get minimize
+    // get minimize
     bool hasChange = true;
     while (hasChange == true)
     {
@@ -209,7 +244,7 @@ void StateMinimization::tableMinimization()
                         }
                     }
 
-                    //get table cross
+                    // get table cross
                     for (auto &t1 : stateTable)
                     {
                         if (t1.first != s2.first)
@@ -319,28 +354,88 @@ void StateMinimization::usableCross()
     }
 }
 
-void StateMinimization::kissToDot(const map<string, map<string, stateOutput>> &inputList)
+void StateMinimization::stateToDot()
 {
     fstream outputFile;
-    outputFile.open("output.dot", ios::out | ios::trunc);
+    outputFile.open(outputDot, ios::out | ios::trunc);
+
+    cout << endl
+         << outputDot << endl;
 
     outputFile << "digraph STG {" << endl;
-    outputFile << "rankdir=LR;" << endl;
+    cout << "digraph STG {" << endl;
+    outputFile << "\trankdir=LR;" << endl;
+    cout << "\trankdir=LR;" << endl;
 
-    outputFile << "   INIT [shape=point];" << endl;
+    outputFile << "\tINIT [shape=point];" << endl;
+    cout << "\tINIT [shape=point];" << endl;
+
+    int count = 0;
+
     for (auto &name : stateName)
     {
-        outputFile << name << " [label=\"" << name << "\"];" << endl;
+        count++;
+        outputFile << "\t" << name << " [label=\"" << name << "\"];" << endl;
+        cout << "\t" << name << " [label=\"" << name << "\"];" << endl;
     }
-    outputFile << "INIT -> " << inputScript.beginState << ";" << endl;
-    for (auto &list : inputList)
+
+    inputScript.stateNumber = count;
+
+    outputFile << "\tINIT -> " << inputScript.beginState << ";" << endl;
+    cout << "\tINIT -> " << inputScript.beginState << ";" << endl;
+
+    count = 0;
+    for (auto &list : stateList)
     {
         for (auto input : list.second)
         {
-            outputFile << list.first << " -> " << list.second[input.first].nextState << "[label=\"" << input.first << "/" << list.second[input.first].output << "\"];" << endl;
+            count++;
+            outputFile << "\t" << list.first << " -> " << input.second.nextState << " [label=\"" << input.first << "/" << input.second.output << "\"];" << endl;
+            cout << "\t" << list.first << " -> " << input.second.nextState << " [label=\"" << input.first << "/" << input.second.output << "\"];" << endl;
         }
     }
     outputFile << "}";
+    cout << "}" << endl
+    ;
+
+    inputScript.lines = count;
 
     outputFile.close();
+}
+
+void StateMinimization::stateToKiss()
+{
+    fstream file;
+    file.open(outputKiss, ios::out | ios::trunc);
+    cout << endl
+         << outputKiss << endl;
+    file << ".start_kiss" << endl;
+    cout << ".start_kiss" << endl;
+
+    file << ".i " << inputScript.inputNumber << endl;
+    cout << ".i " << inputScript.inputNumber << endl;
+
+    file << ".o " << inputScript.outputNumber << endl;
+    cout << ".o " << inputScript.outputNumber << endl;
+
+    file << ".p " << inputScript.lines << endl;
+    cout << ".p " << inputScript.lines << endl;
+
+    file << ".s " << inputScript.stateNumber << endl;
+    cout << ".s " << inputScript.stateNumber << endl;
+
+    file << ".r " << inputScript.beginState << endl;
+    cout << ".r " << inputScript.beginState << endl;
+
+    for (auto &state : stateList)
+    {
+        for (auto &input : state.second)
+        {
+            file << input.first << " " << state.first << " " << input.second.nextState << " " << input.second.output << endl;
+            cout << input.first << " " << state.first << " " << input.second.nextState << " " << input.second.output << endl;
+        }
+    }
+    file << ".end_kiss" << endl;
+    cout << ".end_kiss" << endl;
+    file.close();
 }
